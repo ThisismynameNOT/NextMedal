@@ -1,0 +1,47 @@
+name: Security dependency remediation trial
+on:
+  push:
+    branches: [security/oct-2026-dependency-audit]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: october-dependency-remediation
+  cancel-in-progress: false
+jobs:
+  patch-verify:
+    if: github.ref == 'refs/heads/security/oct-2026-dependency-audit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+          cache: pnpm
+      - name: Baseline reproduce audit vulnerabilities
+        run: |
+          pnpm install --frozen-lockfile
+          if pnpm audit --prod --audit-level high; then
+            echo 'Unexpected clean baseline; abort mutation'
+            exit 1
+          fi
+      - name: Remediate vulnerable dependencies with audited overrides
+        run: |
+          pnpm audit --fix --prod
+          pnpm install --frozen-lockfile
+      - name: Verify production dependency security gate
+        run: pnpm audit --prod --audit-level high
+      - name: Regression checks
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+      - name: Commit only verified dependency changes
+        run: |
+          git add package.json pnpm-lock.yaml
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(security): remediate production dependency advisories [skip ci]'
+            git push origin HEAD:refs/heads/security/oct-2026-dependency-audit
+          fi
