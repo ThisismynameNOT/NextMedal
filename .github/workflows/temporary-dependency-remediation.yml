@@ -43,6 +43,7 @@ jobs:
           pkg.pnpm.overrides['@actions/github>undici'] = '8.12.2';
           pkg.pnpm.overrides['@actions/http-client>undici'] = '8.12.2';
           pkg.pnpm.overrides['@actions/core>undici'] = '8.12.2';
+          pkg.pnpm.overrides['@module-federation/dts-plugin>undici'] = '8.12.2';
           fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
           NODE
           pnpm install --no-frozen-lockfile
