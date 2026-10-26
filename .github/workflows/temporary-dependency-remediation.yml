@@ -30,6 +30,18 @@ jobs:
       - name: Remediate vulnerable dependencies with audited overrides
         run: |
           pnpm audit --fix --prod
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const path = 'package.json';
+          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+          pkg.pnpm ||= {};
+          pkg.pnpm.overrides ||= {};
+          for (const key of Object.keys(pkg.pnpm.overrides)) {
+            if (key.startsWith('undici@') && /(?:>=8\.|<8\.)/.test(key)) delete pkg.pnpm.overrides[key];
+          }
+          pkg.pnpm.overrides['undici@>=8.0.0 <8.12.2'] = '8.12.2';
+          fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
+          NODE
           pnpm install --no-frozen-lockfile
           pnpm install --frozen-lockfile
       - name: Verify production dependency security gate
