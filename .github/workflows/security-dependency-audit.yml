@@ -1,0 +1,22 @@
+name: October dependency vulnerability verification
+on:
+  push:
+    branches: [security/oct-2026-dependency-audit]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  production-dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+          cache: pnpm
+      - name: Install exact locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Scan production dependency tree for high and critical vulnerabilities
+        run: pnpm audit --prod --audit-level high
