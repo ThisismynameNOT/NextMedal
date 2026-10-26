@@ -1,7 +1,9 @@
 name: October dependency vulnerability verification
 on:
   push:
-    branches: [security/oct-2026-dependency-audit]
+    branches: [prod, security/oct-2026-dependency-audit]
+  pull_request:
+    branches: [prod]
   workflow_dispatch:
 permissions:
   contents: read
